@@ -1,0 +1,68 @@
+## List of prefered countries (one per line)
+## uncomment as needed.
+
+#Worldwide
+#Australia
+#Austria
+#Belarus
+#Belgium
+#Bosnia and Herzegovina
+#Brazil
+#Bulgaria
+#Canada
+#Chile
+#China
+#Colombia
+#Croatia
+#Czech Republic
+#Denmark
+#Ecuador
+#Finland
+#France
+#Germany
+#Greece
+#Hong Kong
+#Hungary
+#Iceland
+#India
+#Indonesia
+#Iran
+#Ireland
+#Israel
+#Italy
+#Japan
+#Kazakhstan
+#Latvia
+#Lithuania
+#Luxembourg
+#Macedonia
+#Netherlands
+#New Caledonia
+#Norway
+#Philippines
+#Poland
+#Portugal
+#Qatar
+#Romania
+#Russia
+#Serbia
+#Singapore
+#Slovakia
+#South Africa
+#South Korea
+#Spain
+#Sweden
+#Switzerland
+#Taiwan
+#Thailand
+#Turkey
+#Ukraine
+#United Kingdom
+#United States
+#Vietnam
+
+## Leave the following commented for https-only
+# ALLOW_HTTP
+
+## List of preferred Arch Linux servers (one per line)
+# Server = http://delta.archlinux.fr/$repo/os/$arch

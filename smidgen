@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+from collections import defaultdict
+from os.path import expanduser
+from subprocess import call, check_output
+
+
+# Useful places
+tmp_file = expanduser("~/.smidgentmp")
+conf_file = expanduser("~/.smidgenrc")
+mirror_file = "/etc/pacman.d/mirrorlist"
+new_mirrors = mirror_file + ".pacnew"
+old_mirrors = mirror_file + ".bkup"
+
+
+# Useful functions
+def get_conf(filename):
+    try:
+        with open(filename, 'r') as f:
+            raw_config = filter(lambda line: line[0] != '#', f.readlines())
+    except IOError:
+        print("Warning: no/empty ~/.smidgenrc - ranking all https servers!")
+        return [], []
+
+    allow_http = False
+    countries, servers = [], []
+    for line in raw_config:
+        if "ALLOW_HTTP" in line:
+            allow_http = True
+        elif 'http' not in line and line.strip():
+            countries.append(line)
+        elif 'http' in line:
+            servers.append(line)
+
+    return countries, servers, allow_http
+
+
+def get_mirrors_by_country(commented_mirrorlist, allow_http):
+    mirror_dict = defaultdict(list)
+    last_seen = None
+    for line in commented_mirrorlist:
+        if "##" in line:
+            last_seen = line.strip("# \n")
+        elif "https:" in line or (allow_http and "http:" in line):
+            mirror_dict[last_seen].append(line.strip('#'))
+
+    return mirror_dict
+
+
+def rank(mirrorlist):
+    if not mirrorlist:
+        return []
+    with open(tmp_file, 'w') as f:
+        f.writelines(mirrorlist)
+    response = check_output(["rankmirrors", tmp_file])
+    return [line + '\n' for line in response.decode("utf-8").split('\n')]
+
+
+def check_servers(servers):
+    responding = rank(servers)
+    return [server for server in servers if server in responding]
+
+
+def rank_by_country(countries, servers, mirror_dict):
+    # Ranks the servers in each country, excluding those
+    # in the list of prefered servers, which (if they exist)
+    # we put at the top of the file, regardless of speed.
+    if not countries and not servers:
+        countries = mirror_dict.keys()
+
+    candidates = []
+    for country in countries:
+        candidates += filter(
+            lambda server: server.strip() not in servers,
+            mirror_dict[country.strip()]
+        )
+    ranked = rank(candidates)
+    return ranked[:5] + ['#' + l for l in ranked[6:]]
+
+
+if __name__ == "__main__":
+    countries, servers, allow_http = get_conf(conf_file)
+    with open(new_mirrors, 'r') as f:
+        commented = f.readlines()
+    mirror_dict = get_mirrors_by_country(commented, allow_http)
+
+    print("Got list of mirrors. Attempting to rank them, this may take some time.")
+    responding = check_servers(servers)
+    ranked = rank_by_country(countries, servers, mirror_dict)
+
+    if not responding and not ranked:
+        raise RuntimeError("No responding servers found with that config file.")
+    output = responding + ranked + ["\n"] + commented
+
+    print("Cleaning up, backing up and writing files.")
+    with open(tmp_file, 'w') as f:
+        f.writelines(output)
+    call(["sudo", "cp", mirror_file, old_mirrors])
+    call(["sudo", "mv", tmp_file, mirror_file])
+    call(["sudo", "rm", new_mirrors])

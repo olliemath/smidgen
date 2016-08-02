@@ -19,7 +19,7 @@ def get_conf(filename):
             raw_config = filter(lambda line: line[0] != '#', f.readlines())
     except IOError:
         print("Warning: no/empty ~/.smidgenrc - ranking all https servers!")
-        return [], []
+        return [], [], False
 
     allow_http = False
     countries, servers = [], []

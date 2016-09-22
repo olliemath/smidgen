@@ -18,7 +18,11 @@ def get_conf(filename):
         with open(filename, 'r') as f:
             raw_config = filter(lambda line: line[0] != '#', f.readlines())
     except IOError:
-        print("Warning: no/empty ~/.smidgenrc - ranking all https servers!")
+        ok = input("Warning: no/empty ~/.smidgenrc."
+                   "Should I rank all https servers? (y/n)")
+        if ok.lower() not in {'y', 'yes'}:
+            quit()
+
         return [], [], False
 
     allow_http = False
